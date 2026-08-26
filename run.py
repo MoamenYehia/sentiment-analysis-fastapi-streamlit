@@ -1,6 +1,6 @@
 import streamlit as st
 import requests
-
+import os
 
 hf_token = st.secrets.get("HF_TOKEN", os.getenv("HF_TOKEN"))
 
