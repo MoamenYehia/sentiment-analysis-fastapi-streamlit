@@ -2,6 +2,7 @@ import streamlit as st
 import os
 from huggingface_hub import InferenceClient
 
+# إعدادات مظهر الصفحة
 st.set_page_config(
     page_title="AI Sentiment Analyzer",
     page_icon="🧠",
@@ -11,20 +12,28 @@ st.set_page_config(
 st.title("🧠 AI Sentiment Analysis")
 st.caption("Powered by Hugging Face & Streamlit")
 
-HF_TOKEN = st.secrets.get("HF_TOKEN", os.getenv("HF_TOKEN"))
+# جلب التوكن من إعدادات Streamlit بأمان
+try:
+    HF_TOKEN = st.secrets["HF_TOKEN"]
+except FileNotFoundError:
+    # للتشغيل المحلي لو مفيش secrets
+    HF_TOKEN = os.getenv("HF_TOKEN") 
 
 if not HF_TOKEN:
     st.error("Hugging Face Token is missing. Please add it to Secrets!")
     st.stop()
 
+# إعداد العميل والموديل
 MODEL_ID = "cardiffnlp/twitter-roberta-base-sentiment-latest"
 client = InferenceClient(api_key=HF_TOKEN)
 
+# حقل إدخال النص
 user_text = st.text_area(
     "Enter the sentence/review below:",
     placeholder="e.g. This product exceeded my expectations, absolutely loved it!"
 )
 
+# زر التحليل
 if st.button("Analyze Sentiment", use_container_width=True):
     if not user_text.strip():
         st.warning("Please enter some text first.")
