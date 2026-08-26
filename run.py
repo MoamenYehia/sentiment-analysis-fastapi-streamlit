@@ -1,8 +1,6 @@
 import streamlit as st
-import requests
 import os
-
-hf_token = st.secrets.get("HF_TOKEN", os.getenv("HF_TOKEN"))
+from huggingface_hub import InferenceClient
 
 st.set_page_config(
     page_title="AI Sentiment Analyzer",
@@ -11,11 +9,17 @@ st.set_page_config(
 )
 
 st.title("🧠 AI Sentiment Analysis")
-st.caption("Powered by FastAPI & Hugging Face")
+st.caption("Powered by Hugging Face & Streamlit")
 
-API_URL = "http://127.0.0.1:8000/analyze"
+HF_TOKEN = st.secrets.get("HF_TOKEN", os.getenv("HF_TOKEN"))
 
-# حقل إدخال النص
+if not HF_TOKEN:
+    st.error("Hugging Face Token is missing. Please add it to Secrets!")
+    st.stop()
+
+MODEL_ID = "cardiffnlp/twitter-roberta-base-sentiment-latest"
+client = InferenceClient(api_key=HF_TOKEN)
+
 user_text = st.text_area(
     "Enter the sentence/review below:",
     placeholder="e.g. This product exceeded my expectations, absolutely loved it!"
@@ -27,29 +31,30 @@ if st.button("Analyze Sentiment", use_container_width=True):
     else:
         with st.spinner("Analyzing text with neural network..."):
             try:
-                response = requests.post(
-                    API_URL,
-                    json={"text": user_text},
-                    timeout=10
+                response = client.text_classification(
+                    text=user_text,
+                    model=MODEL_ID
                 )
                 
-                if response.status_code == 200:
-                    data = response.json()
-                    label = data["label"]
-                    score = data["score"]
-                    
+                if isinstance(response, list) and len(response) > 0:
+                    top_result = response[0]
+                    label = top_result.label
+                    score = float(top_result.score)
+
                     st.divider()
                     st.subheader("Analysis Result:")
-                    
-                    if label.upper() == "POSITIVE":
+
+                    if label.lower() == "positive":
                         st.success(f"**Sentiment:** {label} 🎉")
-                    else:
+                    elif label.lower() == "negative":
                         st.error(f"**Sentiment:** {label} ⚠️")
-                        
+                    else:
+                        st.info(f"**Sentiment:** {label} ⚖️")
+
                     st.metric(label="Confidence Score", value=f"{score * 100:.2f}%")
                     st.progress(score)
                 else:
-                    st.error(f"Backend Error: {response.json().get('detail', 'Unknown error')}")
-                    
-            except requests.exceptions.ConnectionError:
-                st.error("Could not connect to FastAPI server. Make sure it is running on port 8000!")
+                    st.error("Unexpected response from Hugging Face.")
+
+            except Exception as e:
+                st.error(f"Inference Error: {str(e)}")
