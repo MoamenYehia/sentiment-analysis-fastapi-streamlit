@@ -12,13 +12,7 @@ st.set_page_config(
 st.title("🧠 AI Sentiment Analysis")
 st.caption("Powered by Hugging Face & Streamlit")
 
-# جلب التوكن من إعدادات Streamlit بأمان
-try:
-    HF_TOKEN = st.secrets["HF_TOKEN"]
-except FileNotFoundError:
-    # للتشغيل المحلي لو مفيش secrets
-    HF_TOKEN = os.getenv("HF_TOKEN") 
-
+HF_TOKEN = st.secrets.get("HF_TOKEN", os.getenv("HF_TOKEN"))
 if not HF_TOKEN:
     st.error("Hugging Face Token is missing. Please add it to Secrets!")
     st.stop()
