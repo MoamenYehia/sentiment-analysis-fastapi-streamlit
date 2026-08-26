@@ -1,6 +1,9 @@
 import streamlit as st
 import requests
 
+
+hf_token = st.secrets.get("HF_TOKEN", os.getenv("HF_TOKEN"))
+
 st.set_page_config(
     page_title="AI Sentiment Analyzer",
     page_icon="🧠",
